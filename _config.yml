@@ -1,3 +1,24 @@
-theme: jekyll-theme-minimal
-title: fanjinsong's homepage
-description: 个人记录
+title: fanjinsong · 技术笔记
+description: 记录编程学习、开发工具和解决问题的过程。
+url: https://fanjinsong.github.io
+baseurl: ""
+lang: zh-CN
+timezone: Asia/Shanghai
+markdown: kramdown
+highlighter: rouge
+permalink: /notes/:title.html
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+defaults:
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: post
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - _templates
+  - vendor
