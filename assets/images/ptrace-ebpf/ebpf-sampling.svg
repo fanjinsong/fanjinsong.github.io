@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="940" viewBox="0 0 760 940" role="img" aria-labelledby="title desc">
+  <title id="title">perf event 驱动 eBPF 周期采样</title>
+  <desc id="desc">用户态初始化 perf event 并挂载 BPF。运行期间事件在内核触发，BPF 立即读取寄存器和用户栈，在 map 聚合或向 ring buffer 输出快照，回调结束后目标继续运行。用户态异步批量消费并符号化或离线解栈，无需为每个样本唤醒采集器。采样按所选事件计量，并非硬实时。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="#70816a"/></marker>
+    <style>
+      text{font-family:"Microsoft YaHei","PingFang SC",sans-serif;fill:#2d352e;font-size:20px}
+      .heading{font-size:28px;font-weight:700}.small{font-size:18px;fill:#626f5d}.strong{font-weight:700}.code{font-family:Consolas,"Microsoft YaHei",monospace}
+      .box{fill:#fff;stroke:#cad5c2;stroke-width:1.5}.user{fill:#f5efdf;stroke:#d8ccb0;stroke-width:1.5}.kernel{fill:#eaf1e4;stroke:#b5c9a8;stroke-width:1.5}
+      .line{fill:none;stroke:#70816a;stroke-width:2;marker-end:url(#arrow)}.async{stroke-dasharray:6 5}
+    </style>
+  </defs>
+  <rect width="760" height="940" rx="12" fill="#fafbf8"/>
+  <text x="30" y="45" class="heading">perf event → eBPF：触发时就地取样</text>
+  <text x="30" y="76" class="small">按所选事件计量，非硬实时；线程事件通常只在运行时计数</text>
+  <rect x="28" y="220" width="704" height="473" rx="12" fill="#eff3e9" stroke="#b5c9a8"/>
+
+  <rect x="70" y="102" width="620" height="86" rx="9" class="user"/>
+  <text x="94" y="135" class="strong">用户态初始化：建事件、加载并挂载 BPF</text>
+  <text x="94" y="166" class="small code">perf_event_open → attach BPF → enable</text>
+  <path d="M380 188V265" class="line"/>
+
+  <text x="48" y="249" class="small strong">运行期间 · 内核态采集路径</text>
+  <rect x="70" y="272" width="620" height="78" rx="9" class="kernel"/>
+  <text x="94" y="304" class="strong">perf event 达到采样条件</text>
+  <text x="94" y="332" class="small">例如 CPU clock / task clock / 硬件计数器溢出</text>
+  <path d="M380 350V388" class="line"/>
+
+  <rect x="70" y="395" width="620" height="151" rx="9" class="box"/>
+  <text x="94" y="428" class="strong">BPF 就地读取目标上下文</text>
+  <text x="94" y="459" class="small">寄存器 + 用户栈地址 / stack id，或原始栈快照</text>
+  <text x="94" y="491" class="small">map 中聚合计数，或向 ring buffer 输出事件</text>
+  <text x="94" y="523" class="small">无需每个样本都唤醒用户态采集器</text>
+  <path d="M380 546V584" class="line"/>
+
+  <rect x="70" y="591" width="620" height="76" rx="9" class="kernel"/>
+  <text x="94" y="623" class="strong">回调结束，目标继续运行</text>
+  <text x="94" y="650" class="small">没有 ptrace-stop / waitpid / CONT 控制往返</text>
+
+  <path d="M690 470H716V737H380V767" class="line async"/>
+  <rect x="490" y="716" width="187" height="37" rx="8" fill="#fafbf8"/>
+  <text x="510" y="742" class="small">异步、批量消费</text>
+  <rect x="70" y="774" width="620" height="114" rx="9" class="user"/>
+  <text x="94" y="806" class="strong">用户态：读取聚合结果或消费快照</text>
+  <text x="94" y="837" class="small">符号化；必要时离线 DWARF 解栈</text>
+  <text x="94" y="868" class="small">混合栈仍需要脚本运行时布局与关联规则</text>
+  <text x="30" y="920" class="small">收益来自就地读取、减少控制往返与批量处理；采集本身仍有成本</text>
+</svg>

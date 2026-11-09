@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="1080" viewBox="0 0 760 1080" role="img" aria-labelledby="title desc">
+  <title id="title">ptrace 采样流程与目标线程停止窗口</title>
+  <desc id="desc">先以 PTRACE_SEIZE 附加线程，每次采样通过 INTERRUPT 停止目标，waitpid 确认停止，GETREGSET 读取寄存器，再批量或多次读取栈与运行时对象。保存完整快照后用 CONT 恢复，最后在采集器用户态解栈。停止和读取包含多次系统调用往返。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="#70816a"/></marker>
+    <style>
+      text{font-family:"Microsoft YaHei","PingFang SC",sans-serif;fill:#2d352e;font-size:20px}
+      .heading{font-size:28px;font-weight:700}.small{font-size:18px;fill:#626f5d}.strong{font-weight:700}.code{font-family:Consolas,"Microsoft YaHei",monospace}
+      .box{fill:#fff;stroke:#cad5c2;stroke-width:1.5}.user{fill:#f5efdf;stroke:#d8ccb0;stroke-width:1.5}.kernel{fill:#eaf1e4;stroke:#b5c9a8;stroke-width:1.5}
+      .line{fill:none;stroke:#70816a;stroke-width:2;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="760" height="1080" rx="12" fill="#fafbf8"/>
+  <text x="30" y="45" class="heading">ptrace：停住线程，再取样</text>
+  <text x="30" y="75" class="small">控制与读取均由采集器发起，ptrace 按 TID 操作</text>
+  <rect x="28" y="325" width="704" height="525" rx="12" fill="#eff3e9" stroke="#b5c9a8" stroke-dasharray="6 5"/>
+
+  <rect x="70" y="100" width="620" height="80" rx="9" class="user"/>
+  <text x="94" y="132" class="strong">初始化：附加目标线程</text>
+  <text x="94" y="161" class="small code">PTRACE_SEIZE(TID) · 只附加，不停止</text>
+  <path d="M380 180V218" class="line"/>
+
+  <rect x="70" y="225" width="620" height="76" rx="9" class="kernel"/>
+  <text x="94" y="256" class="strong">采集器请求内核停止目标 TID</text>
+  <text x="94" y="283" class="small code">ptrace(PTRACE_INTERRUPT, TID, …)</text>
+  <path d="M380 301V366" class="line"/>
+
+  <text x="48" y="352" class="small strong">目标线程停止窗口</text>
+  <rect x="70" y="373" width="620" height="76" rx="9" class="box"/>
+  <text x="94" y="404" class="strong">等待并确认 ptrace-stop</text>
+  <text x="94" y="431" class="small code">waitpid(TID, …, __WALL) · 检查停止原因</text>
+  <path d="M380 449V486" class="line"/>
+
+  <rect x="70" y="493" width="620" height="76" rx="9" class="box"/>
+  <text x="94" y="524" class="strong">读取寄存器：PC、SP、FP 等</text>
+  <text x="94" y="551" class="small code">ptrace(PTRACE_GETREGSET, …)</text>
+  <path d="M380 569V606" class="line"/>
+
+  <rect x="70" y="613" width="620" height="105" rx="9" class="box"/>
+  <text x="94" y="644" class="strong">读取用户栈与所需的脚本运行时对象</text>
+  <text x="94" y="673" class="small code">process_vm_readv：可批量复制</text>
+  <text x="94" y="700" class="small code">PTRACE_PEEKDATA：每次一机器字，需多次调用</text>
+  <path d="M380 718V755" class="line"/>
+
+  <rect x="70" y="762" width="620" height="66" rx="9" class="kernel"/>
+  <text x="94" y="791" class="strong">所需快照完整后，恢复目标线程</text>
+  <text x="94" y="816" class="small code">ptrace(PTRACE_CONT, TID, …)</text>
+  <path d="M380 850V887" class="line"/>
+
+  <rect x="70" y="894" width="620" height="110" rx="9" class="user"/>
+  <text x="94" y="926" class="strong">采集器用户态：基于快照解栈、符号化</text>
+  <text x="94" y="957" class="small">native：frame pointer / DWARF CFI</text>
+  <text x="94" y="985" class="small">脚本：解析运行时帧，并与 native 栈关联</text>
+  <text x="30" y="1043" class="small">停止、等待、取寄存器、读内存、恢复：多次 syscall 往返</text>
+</svg>

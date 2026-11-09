@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="1090" viewBox="0 0 760 1090" role="img" aria-labelledby="title desc">
+  <title id="title">uprobe 和 uretprobe 跟踪 malloc 与 free</title>
+  <desc id="desc">malloc 入口 uprobe 按 TID 保存申请大小，返回 uretprobe 获取分配地址并采集寄存器和栈快照。free 入口 uprobe 记录释放地址。用户态按事件顺序配对分配与释放，停止采集后仅对仍存活分配解栈并按栈汇总。传统 uprobe 命中软件断点进入内核，具体路径依架构和内核而异。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="#70816a"/></marker>
+    <style>
+      text{font-family:"Microsoft YaHei","PingFang SC",sans-serif;fill:#2d352e;font-size:20px}
+      .heading{font-size:28px;font-weight:700}.small{font-size:18px;fill:#626f5d}.strong{font-weight:700}.code{font-family:Consolas,"Microsoft YaHei",monospace}
+      .box{fill:#fff;stroke:#cad5c2;stroke-width:1.5}.user{fill:#f5efdf;stroke:#d8ccb0;stroke-width:1.5}.kernel{fill:#eaf1e4;stroke:#b5c9a8;stroke-width:1.5}
+      .line{fill:none;stroke:#70816a;stroke-width:2;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="760" height="1090" rx="12" fill="#fafbf8"/>
+  <text x="30" y="45" class="heading">uprobe / uretprobe：在函数边界记录事件</text>
+  <text x="30" y="77" class="small">以 malloc / free 为例：分配事件保留快照，释放事件参与配对</text>
+
+  <rect x="70" y="106" width="620" height="67" rx="9" class="user"/>
+  <text x="94" y="146" class="strong code">目标调用 malloc(size)</text>
+  <path d="M380 173V210" class="line"/>
+  <rect x="70" y="217" width="620" height="83" rx="9" class="kernel"/>
+  <text x="94" y="250" class="strong">入口 uprobe → 内核 BPF</text>
+  <text x="94" y="280" class="small">按 TID 保存 size；返回用户态执行 malloc</text>
+  <path d="M380 300V337" class="line"/>
+  <rect x="70" y="344" width="620" height="101" rx="9" class="kernel"/>
+  <text x="94" y="377" class="strong">返回 uretprobe → 内核 BPF</text>
+  <text x="94" y="406" class="small">获取返回的 ptr，与该 TID 的 size 配对</text>
+  <text x="94" y="433" class="small">成功分配时尝试保存寄存器与栈快照，输出事件</text>
+  <path d="M380 445V482" class="line"/>
+  <rect x="70" y="489" width="620" height="67" rx="9" class="user"/>
+  <text x="94" y="529" class="strong">目标继续运行；可能稍后调用 free(ptr)</text>
+  <path d="M380 556V593" class="line"/>
+  <rect x="70" y="600" width="620" height="83" rx="9" class="kernel"/>
+  <text x="94" y="633" class="strong">free 入口 uprobe → 内核 BPF</text>
+  <text x="94" y="663" class="small">输出释放地址；未调用 free 的分配仍保持存活</text>
+  <path d="M380 683V720" class="line"/>
+  <rect x="70" y="727" width="620" height="101" rx="9" class="user"/>
+  <text x="94" y="760" class="strong">用户态消费事件，按顺序配对</text>
+  <text x="94" y="791" class="small">malloc：记录 ptr → 大小、寄存器、栈快照</text>
+  <text x="94" y="818" class="small">free：移除对应分配；注意地址复用与事件丢失</text>
+  <path d="M380 828V865" class="line"/>
+  <rect x="70" y="872" width="620" height="100" rx="9" class="user"/>
+  <text x="94" y="905" class="strong">停止采集：对仍存活分配解栈并汇总</text>
+  <text x="94" y="936" class="small">使用已保存的快照做 DWARF 解栈</text>
+  <text x="94" y="962" class="small">按调用栈统计次数与字节数，定位疑似泄漏</text>
+
+  <text x="30" y="1020" class="small">传统 uprobe：命中软件断点进入内核</text>
+  <text x="30" y="1052" class="small">具体路径依架构 / 内核而异；每次命中仍有陷入与采集开销</text>
+</svg>
