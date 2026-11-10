@@ -1,14 +1,6 @@
 ---
 layout: default
 ---
-<section class="profile" aria-labelledby="profile-heading">
-  <div class="profile-avatar" aria-hidden="true">f.</div>
-  <div class="profile-copy">
-    <p class="profile-label">个人技术博客</p>
-    <h1 id="profile-heading">你好，我是 fanjinsong。</h1>
-    <p class="profile-description">记录编程学习、开发工具的使用，以及解决问题的过程。<br>把零散的知识整理下来，方便以后回看，也分享给遇到同样问题的人。</p>
-  </div>
-</section>
 {% assign uncategorized_count = 0 %}
 {% for post in site.posts %}{% if post.categories.size == 0 %}{% assign uncategorized_count = uncategorized_count | plus: 1 %}{% endif %}{% endfor %}
 {% assign sorted_categories = site.categories | sort %}

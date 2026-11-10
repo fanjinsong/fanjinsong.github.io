@@ -64,7 +64,7 @@ bundle exec jekyll serve --drafts --unpublished --host 127.0.0.1
 - `_posts/`：正式文章的 Markdown 源文件。
 - `_templates/post.md`：新文章模板，复制后再编辑。
 - `_layouts/`：首页和文章共用的页面布局。
-- `index.html`：个人介绍，以及自动生成文章和分类的模板。
+- `index.html`：自动生成文章和分类的首页模板。
 - `assets/`：样式、脚本和图片等资源。
 - `_config.yml`：站点信息与 Jekyll 配置。
 
