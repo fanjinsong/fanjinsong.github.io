@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="{{ page.description | default: site.description | escape }}">
-  <meta name="theme-color" content="#fafbf8">
+  <meta name="theme-color" content="#f4f6f3">
   <meta property="og:title" content="{{ page.title | default: site.title | escape }}">
   <meta property="og:description" content="{{ page.description | default: site.description | escape }}">
   <meta property="og:type" content="{% if page.layout == 'post' %}article{% else %}website{% endif %}">
@@ -21,6 +21,7 @@
     <div class="shell header-inner">
       <a class="brand" href="{{ '/' | relative_url }}" aria-label="fanjinsong 首页"><span class="brand-mark" aria-hidden="true">f.</span><span>fanjinsong</span></a>
       <div class="header-actions">
+        <a class="header-link" href="{{ '/' | relative_url }}">首页</a>
         <a class="header-link" href="{{ '/' | relative_url }}#notes">文章</a>
         <a class="header-link" href="https://github.com/fanjinsong" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span><span class="visually-hidden">（在新标签页打开）</span></a>
         <button class="icon-button theme-toggle" type="button" aria-label="切换到深色主题" aria-pressed="false" title="切换主题">
@@ -30,7 +31,7 @@
       </div>
     </div>
   </header>
-  <main id="main" class="shell{% if page.layout == 'post' %} article-layout{% endif %}">{{ content }}</main>
+  <main id="main">{{ content }}</main>
   <footer class="site-footer shell"><p>© <span data-year>{{ site.time | date: '%Y' }}</span> fanjinsong · 技术笔记</p><a href="https://github.com/fanjinsong/fanjinsong.github.io" target="_blank" rel="noopener noreferrer">本站源码 <span aria-hidden="true">↗</span><span class="visually-hidden">（在新标签页打开）</span></a></footer>
 </body>
 </html>

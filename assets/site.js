@@ -20,7 +20,7 @@
       themeButton.setAttribute('aria-label', isDark ? '切换到浅色主题' : '切换到深色主题');
       themeButton.title = isDark ? '切换到浅色主题' : '切换到深色主题';
     }
-    if (themeColor) themeColor.content = isDark ? '#1d231e' : '#fafbf8';
+    if (themeColor) themeColor.content = isDark ? '#1d231e' : '#f4f6f3';
   }
   applyTheme(savedTheme || (systemTheme.matches ? 'dark' : 'light'));
   themeButton?.addEventListener('click', () => {
@@ -81,6 +81,74 @@
       filters[0].focus();
     });
     selectCategory(new URLSearchParams(window.location.search).get('category') || '');
+  }
+  const tocCard = document.getElementById('article-toc');
+  const toc = document.getElementById('toc');
+  const article = document.querySelector('.article-body');
+  if (tocCard && toc && article) {
+    const headings = [...article.querySelectorAll('h2, h3, h4')].filter(element => element.textContent.trim());
+    if (headings.length) {
+      const usedIds = new Set([...document.querySelectorAll('[id]')].map(element => element.id));
+      const list = document.createElement('ol');
+      list.className = 'toc-list';
+      const links = headings.map((element, index) => {
+        if (!element.id || document.getElementById(element.id) !== element) {
+          const base = `section-${index + 1}`;
+          let id = base;
+          let suffix = 2;
+          while (usedIds.has(id)) id = `${base}-${suffix++}`;
+          element.id = id;
+        }
+        usedIds.add(element.id);
+        const level = element.tagName.slice(1);
+        const item = document.createElement('li');
+        item.className = `toc-item toc-level-${level}`;
+        item.dataset.level = level;
+        const link = document.createElement('a');
+        link.className = 'toc-link';
+        link.href = `#${encodeURIComponent(element.id)}`;
+        link.textContent = element.textContent.trim();
+        item.append(link);
+        list.append(item);
+        return link;
+      });
+      toc.append(list);
+      const narrowScreen = window.matchMedia('(max-width: 900px)');
+      function syncTocLayout() {
+        tocCard.open = !narrowScreen.matches;
+      }
+      syncTocLayout();
+      narrowScreen.addEventListener('change', syncTocLayout);
+      tocCard.hidden = false;
+      let currentLink = null;
+      let updateScheduled = false;
+      function updateCurrentSection() {
+        updateScheduled = false;
+        let selected = 0;
+        headings.forEach((element, index) => {
+          if (element.getBoundingClientRect().top <= 120) selected = index;
+        });
+        const link = links[selected];
+        if (link === currentLink) return;
+        currentLink?.removeAttribute('aria-current');
+        link.setAttribute('aria-current', 'location');
+        currentLink = link;
+      }
+      function scheduleTocUpdate() {
+        if (updateScheduled) return;
+        updateScheduled = true;
+        window.requestAnimationFrame(updateCurrentSection);
+      }
+      window.addEventListener('scroll', scheduleTocUpdate, { passive: true });
+      window.addEventListener('resize', scheduleTocUpdate);
+      window.addEventListener('load', scheduleTocUpdate);
+      updateCurrentSection();
+      // A heading without a source ID may be the target of a bookmarked URL.
+      if (window.location.hash) {
+        const hashTarget = headings.find(element => `#${encodeURIComponent(element.id)}` === window.location.hash);
+        hashTarget?.scrollIntoView();
+      }
+    }
   }
   document.querySelectorAll('[data-year]').forEach(element => {
     element.textContent = String(new Date().getFullYear());

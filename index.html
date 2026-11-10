@@ -1,31 +1,10 @@
 ---
 layout: default
 ---
-{% assign uncategorized_count = 0 %}
-{% for post in site.posts %}{% if post.categories.size == 0 %}{% assign uncategorized_count = uncategorized_count | plus: 1 %}{% endif %}{% endfor %}
-{% assign sorted_categories = site.categories | sort %}
-{% assign has_uncategorized_category = false %}
-<div class="blog-layout" id="notes">
-  <aside class="sidebar" aria-label="博客分类">
-    <div class="sidebar-inner">
-      <h2 class="sidebar-heading" id="categories-heading">文章分类</h2>
-      <nav class="category-list" aria-labelledby="categories-heading">
-        <button class="category-button" type="button" data-category-filter="" aria-pressed="true" aria-controls="post-list" disabled><span>全部文章</span><span class="category-count" data-category-count="">{{ site.posts.size }}</span></button>
-        {% for category in sorted_categories %}
-          {% assign category_count = category[1].size %}
-          {% if category[0] == '未分类' %}{% assign has_uncategorized_category = true %}{% assign category_count = category_count | plus: uncategorized_count %}{% endif %}
-          <button class="category-button" type="button" data-category-filter="{{ category[0] | escape }}" aria-pressed="false" aria-controls="post-list" disabled><span>{{ category[0] | escape }}</span><span class="category-count" data-category-count="{{ category[0] | escape }}">{{ category_count }}</span></button>
-        {% endfor %}
-        {% if uncategorized_count > 0 and has_uncategorized_category == false %}
-          <button class="category-button" type="button" data-category-filter="未分类" aria-pressed="false" aria-controls="post-list" disabled><span>未分类</span><span class="category-count" data-category-count="未分类">{{ uncategorized_count }}</span></button>
-        {% endif %}
-      </nav>
-      <p class="sidebar-note">记录问题，也记录解法。<br>一点点积累，慢慢成体系。</p>
-    </div>
-  </aside>
+<div class="shell page-layout blog-layout" id="notes">
   <section class="posts" aria-labelledby="posts-heading">
     <div class="posts-header">
-      <h2 id="posts-heading">全部文章</h2>
+      <h1 id="posts-heading">全部文章</h1>
       <p class="post-count" role="status" aria-live="polite" aria-atomic="true"><span id="post-count">{{ site.posts.size }}</span> 篇文章</p>
     </div>
     <noscript><p class="no-script-note">启用 JavaScript 后可以按分类筛选，以下为全部文章。</p></noscript>
@@ -33,17 +12,20 @@ layout: default
       {% for post in site.posts %}
         {% assign post_categories = post.categories %}
         {% if post_categories.size == 0 %}{% assign post_categories = '未分类' | split: ',' %}{% endif %}
-        <article class="post-item" data-post data-categories="{{ post_categories | jsonify | escape }}">
+        <article class="post-item card" data-post data-categories="{{ post_categories | jsonify | escape }}">
           <div class="post-meta"><time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y.%m.%d' }}</time><span class="meta-dot" aria-hidden="true">·</span><span>{{ post_categories | join: ' / ' | escape }}</span></div>
-          <h3><a href="{{ post.url | relative_url }}">{{ post.title | escape }}</a></h3>
+          <h2><a href="{{ post.url | relative_url }}">{{ post.title | escape }}</a></h2>
           <p class="post-excerpt">{{ post.description | default: post.excerpt | strip_html | strip_newlines | truncate: 160 | escape }}</p>
           <div class="post-bottom"><ul class="post-tags" aria-label="文章标签">{% for tag in post.tags %}<li>{{ tag | escape }}</li>{% endfor %}</ul><a class="read-link" href="{{ post.url | relative_url }}" aria-label="阅读全文：{{ post.title | escape }}">阅读全文 <span aria-hidden="true">→</span></a></div>
         </article>
       {% endfor %}
     </div>
-    <div class="empty-state" id="empty-state"{% if site.posts.size > 0 %} hidden{% endif %}>
+    <div class="empty-state card" id="empty-state"{% if site.posts.size > 0 %} hidden{% endif %}>
       <p id="empty-message">还没有发布的文章。</p>
       <button class="text-button" type="button" data-reset-filter>查看全部文章 <span aria-hidden="true">→</span></button>
     </div>
   </section>
+  <aside class="sidebar" aria-label="博客导航">
+    {% include sidebar.html filterable=true %}
+  </aside>
 </div>

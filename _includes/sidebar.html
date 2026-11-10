@@ -1,0 +1,51 @@
+{% assign uncategorized_count = 0 %}
+{% for post in site.posts %}{% if post.categories.size == 0 %}{% assign uncategorized_count = uncategorized_count | plus: 1 %}{% endif %}{% endfor %}
+{% assign sorted_categories = site.categories | sort %}
+{% assign has_uncategorized_category = false %}
+{% for category in sorted_categories %}{% if category[0] == '未分类' %}{% assign has_uncategorized_category = true %}{% endif %}{% endfor %}
+{% assign category_total = site.categories.size %}
+{% if uncategorized_count > 0 and has_uncategorized_category == false %}{% assign category_total = category_total | plus: 1 %}{% endif %}
+<section class="card sidebar-section stats-card" aria-labelledby="stats-heading">
+  <h2 class="sidebar-heading" id="stats-heading">技术笔记</h2>
+  <dl class="stats-grid">
+    <div><dt>文章</dt><dd>{{ site.posts.size }}</dd></div>
+    <div><dt>分类</dt><dd>{{ category_total }}</dd></div>
+    <div><dt>标签</dt><dd>{{ site.tags.size }}</dd></div>
+  </dl>
+</section>
+<section class="card sidebar-section" aria-labelledby="categories-heading">
+  <h2 class="sidebar-heading" id="categories-heading">文章分类</h2>
+  <nav class="category-list" aria-labelledby="categories-heading">
+    {% if include.filterable %}
+      <button class="category-button" type="button" data-category-filter="" aria-pressed="true" aria-controls="post-list" disabled><span>全部文章</span><span class="category-count" data-category-count="">{{ site.posts.size }}</span></button>
+    {% else %}
+      <a class="category-button" href="{{ '/' | relative_url }}#notes"><span>全部文章</span><span class="category-count">{{ site.posts.size }}</span></a>
+    {% endif %}
+    {% for category in sorted_categories %}
+      {% assign category_count = category[1].size %}
+      {% if category[0] == '未分类' %}{% assign category_count = category_count | plus: uncategorized_count %}{% endif %}
+      {% if include.filterable %}
+        <button class="category-button" type="button" data-category-filter="{{ category[0] | escape }}" aria-pressed="false" aria-controls="post-list" disabled><span>{{ category[0] | escape }}</span><span class="category-count" data-category-count="{{ category[0] | escape }}">{{ category_count }}</span></button>
+      {% else %}
+        <a class="category-button" href="{{ '/' | relative_url }}?category={{ category[0] | url_encode }}#notes"><span>{{ category[0] | escape }}</span><span class="category-count">{{ category_count }}</span></a>
+      {% endif %}
+    {% endfor %}
+    {% if uncategorized_count > 0 and has_uncategorized_category == false %}
+      {% if include.filterable %}
+        <button class="category-button" type="button" data-category-filter="未分类" aria-pressed="false" aria-controls="post-list" disabled><span>未分类</span><span class="category-count" data-category-count="未分类">{{ uncategorized_count }}</span></button>
+      {% else %}
+        <a class="category-button" href="{{ '/' | relative_url }}?category={{ '未分类' | url_encode }}#notes"><span>未分类</span><span class="category-count">{{ uncategorized_count }}</span></a>
+      {% endif %}
+    {% endif %}
+  </nav>
+</section>
+{% if site.posts.size > 0 %}
+<section class="card sidebar-section recent-card" aria-labelledby="recent-heading">
+  <h2 class="sidebar-heading" id="recent-heading">最近文章</h2>
+  <ul class="recent-list">
+    {% for post in site.posts limit: 5 %}
+      <li><a href="{{ post.url | relative_url }}">{{ post.title | escape }}</a><time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y-%m-%d' }}</time></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}

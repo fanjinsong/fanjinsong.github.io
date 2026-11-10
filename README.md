@@ -2,6 +2,8 @@
 
 使用 Markdown 写文章，由 Jekyll 生成页面，沿用 GitHub Pages 托管。首页的文章列表、分类和数量由文章信息自动生成。
 
+页面采用约 1200px 的居中双栏布局：首页左侧展示文章卡片，右侧展示分类、统计与最近文章；文章页左侧为正文，右侧为自动生成的章节目录。手机端切换为单栏，目录可展开或收起。章节目录与首页分类筛选需要 JavaScript，正文和导航链接可直接阅读与访问。
+
 ## 写一篇文章
 
 1. 复制 `_templates/post.md` 到 `_posts/`，按 `年-月-日-英文短名.md` 命名，例如 `2026-11-07-git-notes.md`。
@@ -64,6 +66,7 @@ bundle exec jekyll serve --drafts --unpublished --host 127.0.0.1
 - `_posts/`：正式文章的 Markdown 源文件。
 - `_templates/post.md`：新文章模板，复制后再编辑。
 - `_layouts/`：首页和文章共用的页面布局。
+- `_includes/`：首页和文章页共用的侧栏模板。
 - `index.html`：自动生成文章和分类的首页模板。
 - `assets/`：样式、脚本和图片等资源。
 - `_config.yml`：站点信息与 Jekyll 配置。
