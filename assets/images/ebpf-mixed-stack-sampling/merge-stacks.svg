@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="1184" viewBox="0 0 760 1184" role="img" aria-labelledby="title desc">
+  <title id="title">将分段后的 Lua 调用链插入对应 native VM 锚点</title>
+  <desc id="desc">以 root 到 leaf 的方向展示示例调用链。native 链包括 main、第一段 luaV_execute、cpp_call_lua、第二段 luaV_execute 和 cpp_work。Lua 逻辑帧按 CIST_FRESH 划分：第一段包含 profile_entry、lua_stage_one、lua_stage_two；第二段包含 lua_callback。合并后，两段分别位于其对应的 luaV_execute 后，原有 native C/C++ 帧保留。Lua/C 边界中的 C 帧不额外生成重复的 C++ 帧。图中省略 native 内部帧，优化可能内联部分函数；Lua 函数名只是解释用，实际标签是 source 和函数定义行。此图为机制示意，非实测。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#70816a"/></marker>
+    <style>
+      text{font-family:"Microsoft YaHei","PingFang SC",sans-serif;fill:#2d352e;font-size:20px}
+      .heading{font-size:28px;font-weight:700}.strong{font-weight:700}.small{font-size:18px;fill:#626f5d}.tiny{font-size:17px;fill:#626f5d}.code{font-family:Consolas,"Microsoft YaHei",monospace;font-size:18px}
+      .native{fill:#f5efdf;stroke:#d8ccb0;stroke-width:1.5}.vm{fill:#fff;stroke:#90ad7f;stroke-width:2}.lua{fill:#eaf1e4;stroke:#b5c9a8;stroke-width:1.5}
+      .line{fill:none;stroke:#70816a;stroke-width:2;marker-end:url(#arrow)}.match{stroke-dasharray:5 4}.bracket{fill:none;stroke:#90ad7f;stroke-width:2}
+    </style>
+  </defs>
+  <rect width="760" height="1184" rx="12" fill="#fafbf8"/>
+  <text x="30" y="44" class="heading">Lua 分段，与各自的 VM 锚点对齐</text>
+  <text x="30" y="76" class="small">以下三列均按 root → leaf 排列；#1 / #2 区分两次 VM 执行</text>
+  <text x="138" y="128" text-anchor="middle" class="strong">native 快照展开</text>
+  <text x="378" y="128" text-anchor="middle" class="strong">Lua 逻辑帧分段</text>
+  <text x="620" y="128" text-anchor="middle" class="strong">最终混合调用链</text>
+  <text x="138" y="158" text-anchor="middle" class="tiny">保留 C/C++ 帧</text>
+  <text x="378" y="158" text-anchor="middle" class="tiny">按 CIST_FRESH 划分</text>
+  <text x="620" y="158" text-anchor="middle" class="tiny">在对应 VM 后插入</text>
+
+  <rect x="40" y="195" width="196" height="48" rx="8" class="native"/>
+  <text x="138" y="226" text-anchor="middle" class="code">main</text>
+  <path d="M138 243V276" class="line"/>
+  <rect x="40" y="285" width="196" height="60" rx="8" class="vm"/>
+  <text x="138" y="321" text-anchor="middle" class="code">luaV_execute #1</text>
+  <path d="M138 345V596" class="line"/>
+  <rect x="40" y="605" width="196" height="60" rx="8" class="native"/>
+  <text x="138" y="641" text-anchor="middle" class="code">cpp_call_lua</text>
+  <path d="M138 665V686" class="line"/>
+  <rect x="40" y="695" width="196" height="60" rx="8" class="vm"/>
+  <text x="138" y="731" text-anchor="middle" class="code">luaV_execute #2</text>
+  <path d="M138 755V876" class="line"/>
+  <rect x="40" y="885" width="196" height="60" rx="8" class="native"/>
+  <text x="138" y="921" text-anchor="middle" class="code">cpp_work</text>
+
+  <path d="M236 315H254V372H263" class="line match"/>
+  <rect x="270" y="350" width="216" height="234" rx="10" fill="#eff3e9" stroke="#b5c9a8" stroke-width="1.5"/>
+  <text x="378" y="382" text-anchor="middle" class="strong">段 1 · VM #1</text>
+  <rect x="282" y="397" width="192" height="43" rx="7" class="lua"/>
+  <text x="378" y="425" text-anchor="middle" class="code">profile_entry</text>
+  <path d="M378 440V447" class="line"/>
+  <rect x="282" y="453" width="192" height="43" rx="7" class="lua"/>
+  <text x="378" y="481" text-anchor="middle" class="code">lua_stage_one</text>
+  <path d="M378 496V503" class="line"/>
+  <rect x="282" y="509" width="192" height="43" rx="7" class="lua"/>
+  <text x="378" y="537" text-anchor="middle" class="code">lua_stage_two</text>
+  <path d="M486 472H502" class="line match"/>
+  <path d="M518 375H510V559H518" class="bracket"/>
+
+  <path d="M236 725H254V813H263" class="line match"/>
+  <rect x="270" y="790" width="216" height="100" rx="10" fill="#eff3e9" stroke="#b5c9a8" stroke-width="1.5"/>
+  <text x="378" y="820" text-anchor="middle" class="strong">段 2 · VM #2</text>
+  <rect x="282" y="835" width="192" height="43" rx="7" class="lua"/>
+  <text x="378" y="863" text-anchor="middle" class="code">lua_callback</text>
+  <path d="M486 817H512" class="line match"/>
+
+  <rect x="520" y="195" width="200" height="48" rx="8" class="native"/>
+  <text x="620" y="226" text-anchor="middle" class="code">main</text>
+  <path d="M620 243V276" class="line"/>
+  <rect x="520" y="285" width="200" height="60" rx="8" class="vm"/>
+  <text x="620" y="321" text-anchor="middle" class="code">luaV_execute #1</text>
+  <path d="M620 345V366" class="line"/>
+  <rect x="520" y="375" width="200" height="44" rx="8" class="lua"/>
+  <text x="620" y="404" text-anchor="middle" class="code">profile_entry</text>
+  <path d="M620 419V436" class="line"/>
+  <rect x="520" y="445" width="200" height="44" rx="8" class="lua"/>
+  <text x="620" y="474" text-anchor="middle" class="code">lua_stage_one</text>
+  <path d="M620 489V506" class="line"/>
+  <rect x="520" y="515" width="200" height="44" rx="8" class="lua"/>
+  <text x="620" y="544" text-anchor="middle" class="code">lua_stage_two</text>
+  <path d="M620 559V596" class="line"/>
+  <rect x="520" y="605" width="200" height="60" rx="8" class="native"/>
+  <text x="620" y="641" text-anchor="middle" class="code">cpp_call_lua</text>
+  <path d="M620 665V686" class="line"/>
+  <rect x="520" y="695" width="200" height="60" rx="8" class="vm"/>
+  <text x="620" y="731" text-anchor="middle" class="code">luaV_execute #2</text>
+  <path d="M620 755V786" class="line"/>
+  <rect x="520" y="795" width="200" height="44" rx="8" class="lua"/>
+  <text x="620" y="824" text-anchor="middle" class="code">lua_callback</text>
+  <path d="M620 839V876" class="line"/>
+  <rect x="520" y="885" width="200" height="60" rx="8" class="native"/>
+  <text x="620" y="921" text-anchor="middle" class="code">cpp_work</text>
+
+  <rect x="30" y="990" width="700" height="142" rx="10" class="native"/>
+  <text x="50" y="1021" class="strong">两段 Lua 帧分别接在各自的 luaV_execute 后。</text>
+  <text x="50" y="1053" class="small">C 帧不重复生成 C++ 帧；原有 native 内部帧仍保留，此图省略。</text>
+  <text x="50" y="1085" class="small">-O2 可能内联部分函数，实际 native 链未必与图中逐项相同。</text>
+  <text x="50" y="1117" class="small">Lua 名称仅用于解释，实际标签为 source:函数定义行。</text>
+  <text x="30" y="1159" class="small">机制示意，非实测；实线表示调用链方向，虚线表示分段与锚点的对应关系。</text>
+</svg>

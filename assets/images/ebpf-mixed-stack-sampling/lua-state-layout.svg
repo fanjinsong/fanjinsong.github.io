@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="1320" viewBox="0 0 760 1320" role="img" aria-labelledby="title desc">
+  <title id="title">从 Lua 状态指针槽读取 CallInfo 和源码信息</title>
+  <desc id="desc">LUA_STATE_SLOT 是全局变量 g_lua_state 的地址。BPF 每次采样先读取槽内的 lua_State 指针，再按目标 Lua 库 DWARF 提取的偏移读取 ci 和值栈边界，并计算内嵌 base_ci 的地址。沿 CallInfo.previous 从叶帧向根帧遍历，遇到 base_ci 停止。func.p 指向 Lua 值栈槽，通过 TValue 中的 Lua 闭包读取 Proto 和 TString.contents，立即把 source 和函数定义行写入本次事件。普通 C/C++ 栈与 Lua CallInfo 是两种结构。此图为机制示意，非实测。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#70816a"/></marker>
+    <style>
+      text{font-family:"Microsoft YaHei","PingFang SC",sans-serif;fill:#2d352e;font-size:20px}
+      .heading{font-size:28px;font-weight:700}.section{font-size:22px;font-weight:700}.strong{font-weight:700}.small{font-size:18px;fill:#626f5d}.code{font-family:Consolas,"Microsoft YaHei",monospace}
+      .box{fill:#fff;stroke:#cad5c2;stroke-width:1.5}.lua{fill:#eaf1e4;stroke:#b5c9a8;stroke-width:1.5}.note{fill:#f5efdf;stroke:#d8ccb0;stroke-width:1.5}
+      .line{fill:none;stroke:#70816a;stroke-width:2;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="760" height="1320" rx="12" fill="#fafbf8"/>
+  <text x="30" y="44" class="heading">从指针槽定位 Lua 逻辑栈</text>
+  <text x="30" y="76" class="small">各成员偏移来自目标 Lua 库 DWARF；采样时才读取对象字段</text>
+
+  <rect x="60" y="112" width="640" height="116" rx="10" class="note"/>
+  <text x="84" y="144" class="section code">LUA_STATE_SLOT = &amp;g_lua_state</text>
+  <text x="84" y="176">这是全局指针变量本身的地址，即指针槽的位置</text>
+  <text x="84" y="207">槽中存放 lua_State*，并非 Lua 对象本体</text>
+  <path d="M380 228V267" class="line"/>
+  <text x="410" y="256" class="small">每次采样读取槽值</text>
+
+  <rect x="60" y="276" width="640" height="145" rx="10" class="lua"/>
+  <text x="84" y="309" class="section">lua_State 对象</text>
+  <text x="84" y="344">ci：当前帧指针；base_ci：内嵌的链尾哨兵</text>
+  <text x="84" y="377">stack.p / stack_last.p：Lua 值栈边界</text>
+  <text x="84" y="405" class="small">根据 OFF_* 读取字段；空指针、读取失败等情况分别标记</text>
+  <path d="M380 421V446" class="line"/>
+
+  <rect x="24" y="455" width="712" height="190" rx="12" fill="#eff3e9" stroke="#b5c9a8" stroke-width="1.5"/>
+  <text x="44" y="487" class="section">沿 previous：从叶帧走向根帧</text>
+  <rect x="52" y="520" width="200" height="90" rx="9" class="box"/>
+  <text x="152" y="550" text-anchor="middle" class="strong">当前 CallInfo</text>
+  <text x="152" y="582" text-anchor="middle" class="small code">func.p / previous</text>
+  <path d="M252 565H271" class="line"/>
+  <rect x="280" y="520" width="200" height="90" rx="9" class="box"/>
+  <text x="380" y="550" text-anchor="middle" class="strong">上一层 CallInfo</text>
+  <text x="380" y="582" text-anchor="middle" class="small code">func.p / previous</text>
+  <path d="M480 565H499" class="line"/>
+  <rect x="508" y="520" width="200" height="90" rx="9" class="note"/>
+  <text x="608" y="550" text-anchor="middle" class="strong">base_ci 哨兵</text>
+  <text x="608" y="582" text-anchor="middle" class="small">到此停止，不输出</text>
+  <path d="M152 610V669" class="line"/>
+  <text x="183" y="664" class="small">读取每帧的 func.p</text>
+
+  <rect x="60" y="678" width="640" height="104" rx="10" class="lua"/>
+  <text x="84" y="709" class="strong code">func.p → StackValue.val（TValue）</text>
+  <text x="84" y="742">读取类型标记 tt_，按 Lua/C 函数类别处理</text>
+  <text x="84" y="770" class="small">下方只展开 Lua 闭包分支</text>
+  <path d="M140 782V825" class="line"/>
+
+  <rect x="40" y="834" width="200" height="110" rx="9" class="box"/>
+  <text x="140" y="866" text-anchor="middle" class="strong code">LClosure</text>
+  <text x="140" y="899" text-anchor="middle" class="small code">value_.gc → 闭包</text>
+  <text x="140" y="929" text-anchor="middle" class="small">读取闭包的 p</text>
+  <path d="M240 886H271" class="line"/>
+  <rect x="280" y="834" width="200" height="110" rx="9" class="box"/>
+  <text x="380" y="866" text-anchor="middle" class="strong code">Proto</text>
+  <text x="380" y="899" text-anchor="middle" class="small code">source → TString</text>
+  <text x="380" y="929" text-anchor="middle" class="small">linedefined：定义行</text>
+  <path d="M480 886H511" class="line"/>
+  <rect x="520" y="834" width="200" height="110" rx="9" class="box"/>
+  <text x="620" y="866" text-anchor="middle" class="strong code">TString</text>
+  <text x="620" y="899" text-anchor="middle" class="small">contents：源文本</text>
+  <text x="620" y="929" text-anchor="middle" class="small">在采样时复制文本</text>
+  <path d="M620 944V978H380V1001" class="line"/>
+
+  <rect x="60" y="1010" width="640" height="90" rx="10" class="lua"/>
+  <text x="84" y="1044" class="strong">立即将 source 和定义行写入本次事件</text>
+  <text x="84" y="1077" class="small">Python 处理旧样本时无需再读取目标 Lua 堆</text>
+
+  <rect x="60" y="1140" width="640" height="120" rx="10" class="note"/>
+  <text x="84" y="1173" class="strong">普通 C/C++ 栈与 Lua CallInfo 是两种结构</text>
+  <text x="84" y="1206" class="small">native 栈由寄存器和栈快照展开；CallInfo 提供 Lua 逻辑帧</text>
+  <text x="84" y="1239" class="small">Lua/C 帧先分类记录，再与 native 调用链进行合并</text>
+  <text x="30" y="1297" class="small">机制示意，非实测；省略了读取失败、深度上限及其他完整性检查分支。</text>
+</svg>

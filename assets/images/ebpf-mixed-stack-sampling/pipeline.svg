@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="1410" viewBox="0 0 760 1410" role="img" aria-labelledby="title desc">
+  <title id="title">eBPF 采样混合栈的完整流程</title>
+  <desc id="desc">初始化时结合 ELF、maps 和 DWARF 解析目标布局，生成 BCC 编译参数。采样期间，每 CPU 的 CPU_CLOCK 事件以 49 Hz 目标频率触发 BPF，同一次回调保存寄存器、最多 16 KiB native 栈、最多 64 个 Lua/C 帧及 source 文本，经 ring buffer 提交。Python 根据快照做 DWARF 解栈，按 CIST_FRESH 分段对齐 Lua 栈，使用 Counter 汇总，停止并排空事件后生成 folded 和火焰图。此图为机制示意，并非实测结果。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#70816a"/></marker>
+    <style>
+      text{font-family:"Microsoft YaHei","PingFang SC",sans-serif;fill:#2d352e;font-size:20px}
+      .heading{font-size:28px;font-weight:700}.section{font-size:22px;font-weight:700}.strong{font-weight:700}.small{font-size:18px;fill:#626f5d}.code{font-family:Consolas,"Microsoft YaHei",monospace}
+      .box{fill:#fff;stroke:#cad5c2;stroke-width:1.5}.user{fill:#f5efdf;stroke:#d8ccb0;stroke-width:1.5}.kernel{fill:#eaf1e4;stroke:#b5c9a8;stroke-width:1.5}
+      .line{fill:none;stroke:#70816a;stroke-width:2;marker-end:url(#arrow)}.async{stroke-dasharray:6 5}
+    </style>
+  </defs>
+  <rect width="760" height="1410" rx="12" fill="#fafbf8"/>
+  <text x="30" y="44" class="heading">eBPF 混合栈：采集现场，再恢复调用链</text>
+  <text x="30" y="76" class="small">初始化解析布局 · 内核保存快照 · 用户态解栈与汇总</text>
+
+  <rect x="24" y="100" width="712" height="250" rx="12" class="user"/>
+  <text x="44" y="132" class="section">初始化 · 用户态</text>
+  <rect x="56" y="153" width="648" height="76" rx="9" class="box"/>
+  <text x="80" y="183" class="strong">目标 ELF + /proc/PID/maps + Lua DWARF</text>
+  <text x="80" y="212" class="small">解析指针槽地址、结构偏移和 Lua VM 地址范围</text>
+  <path d="M380 229V252" class="line"/>
+  <rect x="56" y="261" width="648" height="62" rx="9" class="box"/>
+  <text x="80" y="287" class="strong">生成 -D 参数，编译并挂载 BCC/BPF</text>
+  <text x="80" y="314" class="small code">LUA_STATE_SLOT / OFF_* / SIZE_STACKVALUE</text>
+  <path d="M380 323V366" class="line"/>
+
+  <rect x="24" y="380" width="712" height="428" rx="12" class="kernel"/>
+  <text x="44" y="412" class="section">采样期间 · 内核态</text>
+  <rect x="56" y="433" width="648" height="70" rx="9" class="box"/>
+  <text x="80" y="462" class="strong">CPU_CLOCK 事件 → BPF 回调</text>
+  <text x="80" y="491" class="small">目标频率 49 Hz / CPU；筛选目标进程的用户态现场</text>
+  <path d="M380 503V528" class="line"/>
+  <rect x="56" y="537" width="648" height="162" rx="9" class="box"/>
+  <text x="80" y="567" class="strong">同一次回调：保存有界快照</text>
+  <text x="80" y="599">17 个寄存器 + 从 RSP 起最多 16 KiB 原始栈</text>
+  <text x="80" y="630">沿 CallInfo 保存最多 64 个 Lua/C 帧</text>
+  <text x="80" y="661">source 文本当场复制，避免事后重读 Lua 堆</text>
+  <text x="80" y="689" class="small">读取失败、深度截断等情况随样本标记</text>
+  <path d="M380 699V724" class="line"/>
+  <rect x="56" y="733" width="648" height="48" rx="9" class="box"/>
+  <text x="380" y="764" text-anchor="middle" class="strong">ring buffer：提交同一个样本事件</text>
+  <path d="M380 781V826" class="line async"/>
+  <text x="416" y="832" class="small">异步消费</text>
+
+  <rect x="24" y="840" width="712" height="510" rx="12" class="user"/>
+  <text x="44" y="872" class="section">持续处理 · 用户态 Python</text>
+  <rect x="56" y="894" width="648" height="82" rx="9" class="box"/>
+  <text x="80" y="925" class="strong">消费快照，用 DWARF 恢复 native 调用链</text>
+  <text x="80" y="956" class="small">libdwfl 使用保存的寄存器和栈副本进行展开</text>
+  <path d="M380 976V999" class="line"/>
+  <rect x="56" y="1008" width="648" height="82" rx="9" class="box"/>
+  <text x="80" y="1039" class="strong">按 CIST_FRESH 划分 Lua 执行段并对齐</text>
+  <text x="80" y="1070" class="small">将各段接到对应 luaV_execute 锚点之后</text>
+  <path d="M380 1090V1113" class="line"/>
+  <rect x="56" y="1122" width="648" height="82" rx="9" class="box"/>
+  <text x="80" y="1153" class="strong">Counter：按最终调用栈累加样本数</text>
+  <text x="80" y="1184" class="small">持续汇总后释放原始快照，并统计丢样及失败原因</text>
+  <path d="M380 1204V1227" class="line"/>
+  <rect x="56" y="1236" width="648" height="82" rx="9" class="box"/>
+  <text x="80" y="1267" class="strong">停止采集、排空 ring buffer 后输出</text>
+  <text x="80" y="1298" class="small code">*.folded → FlameGraph → *.svg</text>
+  <text x="30" y="1384" class="small">机制示意，非实测；49 Hz 是目标采样频率，并非墙钟硬实时保证。</text>
+</svg>
